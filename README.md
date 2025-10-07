@@ -180,7 +180,8 @@ For example: `http://192.168.0.168:5678`
 
 On first access, you'll be prompted to:
 1. Create an owner account (email and password)
-2. Set up your workspace
+2. Log in using the Basic Auth (admin / password).
+3. Set up your workspace
 
 ## 🔧 Useful Commands
 
