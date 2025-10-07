@@ -75,7 +75,17 @@ Docker Compose version v2.x.x
 mkdir -p ~/n8n && cd ~/n8n
 ```
 
-### Step 5: Create the docker-compose.yaml File
+### Step 5: Find Your Raspberry Pi IP Address
+
+To find your Pi's IP address, run:
+
+```bash
+hostname -I
+```
+
+The first IP address shown (usually starting with `192.168.` or `10.`) is your local network IP.
+
+### Step 6: Create the docker-compose.yaml File
 
 Create and edit the Docker Compose configuration file:
 
@@ -122,16 +132,6 @@ networks:
 **Note:** Replace `YOUR_PI_IP` with your actual Raspberry Pi IP address.
 
 Save and exit (in nano: `Ctrl+X`, then `Y`, then `Enter`).
-
-### Step 6: Find Your Raspberry Pi IP Address
-
-To find your Pi's IP address, run:
-
-```bash
-hostname -I
-```
-
-The first IP address shown (usually starting with `192.168.` or `10.`) is your local network IP.
 
 ### Step 7: Start the n8n Container
 
