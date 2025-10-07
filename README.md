@@ -19,7 +19,7 @@ Before you begin, ensure you have:
 Update and upgrade your system packages:
 
 ```bash
-sudo apt update && sudo apt full-upgrade -y
+sudo apt update && sudo apt upgrade -y
 ```
 
 After the upgrade completes, reboot your Pi:
