@@ -7,7 +7,7 @@ A complete guide to installing and running n8n workflow automation on your Raspb
 Before you begin, ensure you have:
 
 - **Raspberry Pi 4 or newer** (4GB RAM recommended for Pi 4/5)
-- **Raspberry Pi OS** (64-bit recommended) or Ubuntu Server
+- **Raspberry Pi OS** (64-bit recommended)
 - **Stable internet connection**
 - **At least 8GB free storage space**
 - **Basic command line knowledge**
