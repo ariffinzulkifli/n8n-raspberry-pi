@@ -210,10 +210,11 @@ docker compose up -d
 
 **Expected output:**
 ```
-[+] Running 3/3
+[+] Running 4/4
  ✔ Network n8n_n8n-network  Created
- ✔ Volume n8n_n8n_data      Created
+ ✔ Volume n8n_caddy_data    Created
  ✔ Container n8n            Started
+ ✔ Container caddy          Started
 ```
 
 ### Step 10: Verify n8n is Running
