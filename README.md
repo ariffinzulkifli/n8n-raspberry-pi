@@ -1,1 +1,318 @@
-# n8n-raspberry-pi
+# N8n on Raspberry Pi using Docker Compose
+
+A complete guide to installing and running n8n workflow automation on your Raspberry Pi using Docker Compose.
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have:
+
+- **Raspberry Pi 3B+ or newer** (4GB RAM recommended for Pi 4/5)
+- **Raspberry Pi OS** (64-bit recommended) or Ubuntu Server
+- **Stable internet connection**
+- **At least 8GB free storage space**
+- **Basic command line knowledge**
+
+## 🚀 Installation Steps
+
+### Step 1: Update Your System
+
+Update and upgrade your system packages:
+
+```bash
+sudo apt update && sudo apt full-upgrade -y
+```
+
+After the upgrade completes, reboot your Pi:
+
+```bash
+sudo reboot
+```
+
+### Step 2: Install Docker and Docker Compose Plugin
+
+Install Docker using the official installation script:
+
+```bash
+curl -sSL https://get.docker.com | sh
+```
+
+Add your user to the docker group (replace `$USER` with your username if needed):
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Install Docker Compose plugin:
+
+```bash
+sudo apt install -y docker-compose-plugin
+```
+
+**Important:** Log out and log back in for group changes to take effect, or run:
+
+```bash
+newgrp docker
+```
+
+### Step 3: Verify Installation
+
+Check that Docker and Docker Compose are installed correctly:
+
+```bash
+docker --version
+docker compose version
+```
+
+**Expected output:**
+```
+Docker version 24.x.x, build xxxxxxx
+Docker Compose version v2.x.x
+```
+
+### Step 4: Create the n8n Project Directory
+
+```bash
+mkdir -p ~/n8n && cd ~/n8n
+```
+
+### Step 5: Create the docker-compose.yaml File
+
+Create and edit the Docker Compose configuration file:
+
+```bash
+nano docker-compose.yaml
+```
+
+Copy and paste the following configuration:
+
+```yaml
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://YOUR_PI_IP:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n-network
+
+volumes:
+  n8n_data:
+    driver: local
+
+networks:
+  n8n-network:
+    driver: bridge
+```
+
+**Note:** Replace `YOUR_PI_IP` with your actual Raspberry Pi IP address.
+
+Save and exit (in nano: `Ctrl+X`, then `Y`, then `Enter`).
+
+### Step 6: Find Your Raspberry Pi IP Address
+
+To find your Pi's IP address, run:
+
+```bash
+hostname -I
+```
+
+The first IP address shown (usually starting with `192.168.` or `10.`) is your local network IP.
+
+### Step 7: Start the n8n Container
+
+Start n8n in detached mode:
+
+```bash
+docker compose up -d
+```
+
+**Expected output:**
+```
+[+] Running 2/2
+ ✔ Network n8n_n8n-network  Created
+ ✔ Container n8n            Started
+```
+
+### Step 8: Verify n8n is Running
+
+Check the container status:
+
+```bash
+docker compose ps
+```
+
+You should see the n8n container with status "Up".
+
+View logs to ensure it started correctly:
+
+```bash
+docker compose logs -f
+```
+
+Look for a line like: `Editor is now accessible via: http://0.0.0.0:5678/`
+
+Press `Ctrl+C` to exit the logs.
+
+## 🌐 Accessing n8n
+
+Open your web browser and navigate to:
+
+```
+http://YOUR_PI_IP:5678
+```
+
+For example: `http://192.168.1.100:5678`
+
+On first access, you'll be prompted to:
+1. Create an owner account (email and password)
+2. Set up your workspace
+
+## 🔧 Useful Commands
+
+### Check n8n Status
+```bash
+docker compose ps
+```
+
+### View Live Logs
+```bash
+docker compose logs -f n8n
+```
+
+### Stop n8n
+```bash
+docker compose down
+```
+
+### Restart n8n
+```bash
+docker compose restart
+```
+
+### Update n8n to Latest Version
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### Remove n8n (Keep Data)
+```bash
+docker compose down
+```
+
+### Remove n8n and All Data
+```bash
+docker compose down -v
+```
+
+## 🛠️ Troubleshooting
+
+### Can't Access n8n Web Interface
+
+1. **Check if container is running:**
+   ```bash
+   docker compose ps
+   ```
+
+2. **Check firewall settings:**
+   ```bash
+   sudo ufw status
+   ```
+   If active, allow port 5678:
+   ```bash
+   sudo ufw allow 5678/tcp
+   ```
+
+3. **Verify correct IP address:**
+   ```bash
+   hostname -I
+   ```
+
+### Container Keeps Restarting
+
+Check the logs for errors:
+```bash
+docker compose logs n8n
+```
+
+### Port Already in Use
+
+If port 5678 is already in use, change it in `docker-compose.yaml`:
+```yaml
+ports:
+  - "8080:5678"  # Change 8080 to any available port
+```
+
+Then restart:
+```bash
+docker compose down
+docker compose up -d
+```
+
+## 📊 Data Persistence
+
+Your n8n workflows and data are stored in a Docker volume named `n8n_data`. This means:
+- ✅ Data persists across container restarts
+- ✅ Data survives container recreation
+- ✅ Can be backed up using Docker volume commands
+
+### Backup Your Data
+
+```bash
+docker run --rm -v n8n_n8n_data:/data -v $(pwd):/backup alpine tar czf /backup/n8n-backup-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+### Restore From Backup
+
+```bash
+docker run --rm -v n8n_n8n_data:/data -v $(pwd):/backup alpine sh -c "cd /data && tar xzf /backup/YOUR_BACKUP_FILE.tar.gz"
+```
+
+## 🔒 Security Recommendations
+
+### For Production Use:
+
+1. **Set up HTTPS** using a reverse proxy (nginx, Caddy, or Traefik)
+2. **Use strong passwords** for your n8n account
+3. **Keep Docker and n8n updated** regularly
+4. **Don't expose port 5678** directly to the internet without HTTPS
+5. **Enable Two-Factor Authentication** in n8n settings
+
+### Environment Variables for Security:
+
+Add these to your `docker-compose.yaml` under `environment:`:
+
+```yaml
+- N8N_BASIC_AUTH_ACTIVE=true
+- N8N_BASIC_AUTH_USER=your_username
+- N8N_BASIC_AUTH_PASSWORD=your_secure_password
+```
+
+## 📚 Additional Resources
+
+- [n8n Official Documentation](https://docs.n8n.io/)
+- [n8n Community Forum](https://community.n8n.io/)
+- [n8n GitHub Repository](https://github.com/n8n-io/n8n)
+- [Docker Documentation](https://docs.docker.com/)
+
+## 📝 Notes
+
+- n8n runs on port 5678 by default
+- The container will automatically restart unless stopped manually
+- Data is persisted in Docker volumes, so your workflows won't be lost on restart
+- For remote access outside your local network, consider setting up a VPN or reverse proxy with HTTPS
+
+---
+
+**Happy Automating! 🎉**
