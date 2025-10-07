@@ -65,7 +65,7 @@ docker compose version
 
 **Expected output:**
 ```
-Docker version 24.x.x, build xxxxxxx
+Docker version 28.x.x, build xxxxxxx
 Docker Compose version v2.x.x
 ```
 
@@ -143,8 +143,9 @@ docker compose up -d
 
 **Expected output:**
 ```
-[+] Running 2/2
+[+] Running 3/3
  ✔ Network n8n_n8n-network  Created
+ ✔ Volume n8n_n8n_data      Created
  ✔ Container n8n            Started
 ```
 
