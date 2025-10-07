@@ -22,12 +22,6 @@ Update and upgrade your system packages:
 sudo apt update && sudo apt upgrade -y
 ```
 
-After the upgrade completes, reboot your Pi:
-
-```bash
-sudo reboot
-```
-
 ### Step 2: Install Docker and Docker Compose Plugin
 
 Install Docker using the official installation script:
