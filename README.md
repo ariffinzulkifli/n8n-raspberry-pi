@@ -86,8 +86,6 @@ nano docker-compose.yaml
 Copy and paste the following configuration:
 
 ```yaml
-version: '3.8'
-
 services:
   n8n:
     image: n8nio/n8n:latest
@@ -96,11 +94,17 @@ services:
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=0.0.0.0
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=password
+      - N8N_HOST= # YOUR_PI_IP e.g. 192.168.0.168
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
+      - N8N_SECURE_COOKIE=false
       - NODE_ENV=production
-      - WEBHOOK_URL=http://YOUR_PI_IP:5678/
+      - WEBHOOK_URL=http://YOUR_PI_IP:5678
+      - GENERIC_TIMEZONE=Asia/Kuala_Lumpur
+      - TZ=Asia/Kuala_Lumpur
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
@@ -172,7 +176,7 @@ Open your web browser and navigate to:
 http://YOUR_PI_IP:5678
 ```
 
-For example: `http://192.168.1.100:5678`
+For example: `http://192.168.0.168:5678`
 
 On first access, you'll be prompted to:
 1. Create an owner account (email and password)
@@ -277,26 +281,6 @@ docker run --rm -v n8n_n8n_data:/data -v $(pwd):/backup alpine tar czf /backup/n
 
 ```bash
 docker run --rm -v n8n_n8n_data:/data -v $(pwd):/backup alpine sh -c "cd /data && tar xzf /backup/YOUR_BACKUP_FILE.tar.gz"
-```
-
-## 🔒 Security Recommendations
-
-### For Production Use:
-
-1. **Set up HTTPS** using a reverse proxy (nginx, Caddy, or Traefik)
-2. **Use strong passwords** for your n8n account
-3. **Keep Docker and n8n updated** regularly
-4. **Don't expose port 5678** directly to the internet without HTTPS
-5. **Enable Two-Factor Authentication** in n8n settings
-
-### Environment Variables for Security:
-
-Add these to your `docker-compose.yaml` under `environment:`:
-
-```yaml
-- N8N_BASIC_AUTH_ACTIVE=true
-- N8N_BASIC_AUTH_USER=your_username
-- N8N_BASIC_AUTH_PASSWORD=your_secure_password
 ```
 
 ## 📚 Additional Resources
