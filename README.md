@@ -69,13 +69,53 @@ Docker version 28.x.x, build xxxxxxx
 Docker Compose version v2.x.x
 ```
 
-### Step 4: Create the n8n Project Directory
+### Step 4: Find Your Raspberry Pi Hostname and IP Address
+
+To find your Pi's hostname, run:
+
+```bash
+hostname
+```
+
+To find your Pi's IP address, run:
+
+```bash
+hostname -I
+```
+
+The first IP address shown (usually starting with `192.168.` or `10.`) is your local network IP.
+
+### Step 5: Create the n8n Project Directory
 
 ```bash
 mkdir -p ~/n8n && cd ~/n8n
 ```
 
-### Step 5: Create the docker-compose.yaml File
+### Step 6: Local HTTPS with Self-Signed Certificate
+
+This method allows you to use HTTPS on your local network without external services. Perfect for local development and testing.
+
+```bash
+mkdir -p certs
+cd certs
+```
+
+Generate private key and certificate (valid for 365 days)
+
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout privkey.pem \
+  -out fullchain.pem \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=Department/CN=raspberrypi.local"
+```
+
+**Note:** Replace `raspberrypi.local` with your Pi's hostname or local IP address.
+
+### Step 7: Create the docker-compose.yaml File
+
+```bash
+cd ~/n8n
+```
 
 Create and edit the Docker Compose configuration file:
 
@@ -97,12 +137,12 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=password
-      - N8N_HOST= # YOUR_PI_IP e.g. 192.168.0.168
+      - N8N_HOST= # YOUR_PI_IP e.g. raspberrypi.local or 192.168.0.168
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
       - NODE_ENV=production
-      - WEBHOOK_URL=http://YOUR_PI_IP:5678
+      - WEBHOOK_URL=https://YOUR_PI_IP:5678
       - GENERIC_TIMEZONE=Asia/Kuala_Lumpur
       - TZ=Asia/Kuala_Lumpur
     volumes:
@@ -110,8 +150,24 @@ services:
     networks:
       - n8n-network
 
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/certs
+      - caddy_data:/data
+    networks:
+      - n8n-network
+
 volumes:
   n8n_data:
+    driver: local
+  caddy_data:
     driver: local
 
 networks:
@@ -119,21 +175,33 @@ networks:
     driver: bridge
 ```
 
-**Note:** Replace `YOUR_PI_IP` with your actual Raspberry Pi IP address.
+**Note:** Replace `raspberrypi.local` and `YOUR_PI_IP` with your Pi's hostname or local IP address.
 
 Save and exit (in nano: `Ctrl+X`, then `Y`, then `Enter`).
 
-### Step 6: Find Your Raspberry Pi IP Address
-
-To find your Pi's IP address, run:
+### Step 8: Create Caddyfile
 
 ```bash
-hostname -I
+cd ~/n8n
+nano Caddyfile
 ```
 
-The first IP address shown (usually starting with `192.168.` or `10.`) is your local network IP.
+Add this configuration:
 
-### Step 7: Start the n8n Container
+```
+https://raspberrypi.local {
+    tls /certs/fullchain.pem /certs/privkey.pem
+    reverse_proxy n8n:5678
+}
+
+http://raspberrypi.local {
+    redir https://raspberrypi.local{uri}
+}
+```
+
+**Note:** Replace `raspberrypi.local` with your Pi's hostname or local IP address.
+
+### Step 9: Start the n8n Container
 
 Start n8n in detached mode:
 
@@ -149,7 +217,7 @@ docker compose up -d
  ✔ Container n8n            Started
 ```
 
-### Step 8: Verify n8n is Running
+### Step 10: Verify n8n is Running
 
 Check the container status:
 
