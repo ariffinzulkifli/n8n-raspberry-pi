@@ -182,7 +182,6 @@ Save and exit (in nano: `Ctrl+X`, then `Y`, then `Enter`).
 ### Step 8: Create Caddyfile
 
 ```bash
-cd ~/n8n
 nano Caddyfile
 ```
 
