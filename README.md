@@ -91,25 +91,54 @@ The first IP address shown (usually starting with `192.168.` or `10.`) is your l
 mkdir -p ~/n8n && cd ~/n8n
 ```
 
-### Step 6: Local HTTPS with Self-Signed Certificate
+### Step 6: Install Cloudflared
 
-This method allows you to use HTTPS on your local network without external services. Perfect for local development and testing.
-
-```bash
-mkdir -p certs
-cd certs
-```
-
-Generate private key and certificate (valid for 365 days)
+This method allows you to use HTTPS on your local network.
 
 ```bash
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout privkey.pem \
-  -out fullchain.pem \
-  -subj "/C=US/ST=State/L=City/O=Organization/OU=Department/CN=raspberrypi.local"
+curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb
+sudo dpkg -i cloudflared.deb
 ```
 
-**Note:** Replace `raspberrypi.local` with your Pi's hostname or local IP address.
+Authenticate with Cloudflare
+
+```
+cloudflared tunnel login
+```
+
+This will open a browser window. Log in to your Cloudflare account (create a free one if needed).
+
+Create a Tunnel
+
+```
+cloudflared tunnel create n8n-tunnel
+```
+**Note:** the Tunnel ID that appears (you'll need it).
+
+Configure the Tunnel
+
+```bash
+mkdir -p ~/.cloudflared
+nano ~/.cloudflared/config.yml
+```
+
+Add this configuration (replace `TUNNEL_ID` with your actual tunnel ID):
+
+```
+tunnel: TUNNEL_ID
+credentials-file: /home/pi/n8n/.cloudflared/TUNNEL_ID.json
+
+ingress:
+  - hostname: your-subdomain.example.com
+    service: http://localhost:5678
+  - service: http_status:404
+```
+
+Create DNS Record
+
+```bash
+cloudflared tunnel run n8n-tunnel
+```
 
 ### Step 7: Create the docker-compose.yaml File
 
@@ -137,12 +166,11 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=password
-      - N8N_HOST= # YOUR_PI_IP e.g. raspberrypi.local or 192.168.0.168
+      - N8N_HOST=your-subdomain.example.com
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - N8N_SECURE_COOKIE=false
+      - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - WEBHOOK_URL=https://YOUR_PI_IP:5678
+      - WEBHOOK_URL=https://your-subdomain.example.com/
       - GENERIC_TIMEZONE=Asia/Kuala_Lumpur
       - TZ=Asia/Kuala_Lumpur
     volumes:
@@ -150,24 +178,8 @@ services:
     networks:
       - n8n-network
 
-  caddy:
-    image: caddy:latest
-    container_name: caddy
-    restart: unless-stopped
-    ports:
-      - "443:443"
-      - "80:80"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./certs:/certs
-      - caddy_data:/data
-    networks:
-      - n8n-network
-
 volumes:
   n8n_data:
-    driver: local
-  caddy_data:
     driver: local
 
 networks:
@@ -175,32 +187,9 @@ networks:
     driver: bridge
 ```
 
-**Note:** Replace `raspberrypi.local` and `YOUR_PI_IP` with your Pi's hostname or local IP address.
-
 Save and exit (in nano: `Ctrl+X`, then `Y`, then `Enter`).
 
-### Step 8: Create Caddyfile
-
-```bash
-nano Caddyfile
-```
-
-Add this configuration:
-
-```
-https://raspberrypi.local {
-    tls /certs/fullchain.pem /certs/privkey.pem
-    reverse_proxy n8n:5678
-}
-
-http://raspberrypi.local {
-    redir https://raspberrypi.local{uri}
-}
-```
-
-**Note:** Replace `raspberrypi.local` with your Pi's hostname or local IP address.
-
-### Step 9: Start the n8n Container
+### Step 8: Start the n8n Container
 
 Start n8n in detached mode:
 
@@ -217,7 +206,7 @@ docker compose up -d
  ✔ Container caddy          Started
 ```
 
-### Step 10: Verify n8n is Running
+### Step 9: Verify n8n is Running
 
 Check the container status:
 
